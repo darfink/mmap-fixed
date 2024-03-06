@@ -241,6 +241,14 @@ impl MemoryMap {
             flags |= libc::MAP_ANON;
         }
 
+        // This adjustment ensures that the behavior of memory protection is
+        // orthogonal across all platforms by aligning NetBSD's protection flags
+        // with those of other operating systems.
+        if cfg!(target_os = "netbsd") {
+            let max_protection = (libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) << 3;
+            prot = prot | max_protection;
+        }
+
         let r = unsafe {
             libc::mmap(
                 addr as *mut c_void,
